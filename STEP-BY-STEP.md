@@ -47,3 +47,47 @@ configtxgen -profile ThreeOrgsChannel -channelID marketplace -outputAnchorPeersU
 ```
 configtxgen -profile ThreeOrgsChannel -channelID marketplace -outputAnchorPeersUpdate ./channel-artifacts/Org3MSPanchors.tx -asOrg Org3MSP
 ```
+
+9. Crear blockchain-network/base/peer-base.yaml
+
+10. Crear blockchain-network/docker-compose-base-yaml
+
+11. Crear blockchain-netowrk/docker-compose-cli-couchdb.yaml
+
+12. Exportamos las variables que necesitamos
+
+```
+export CHANNEL_NAME=marketplace
+export FABRIC_CFG_PATH=$WPD # debemos estar en blockchain-network
+export VERBOSE=false
+```
+
+13. Levantamos docker-compose
+
+```
+CHANNEL_NAME=$CHANNEL_NAME docker-compose -f docker-compose-cli-couchdb.yaml up -d
+```
+
+14. Probamos que esté ok el contenedor
+
+```
+docker exec -it cli bash
+```
+
+15. Dentro del contenedor CLI, creamos la variable de ambiante con el nombre del canal
+
+```
+export CHANNEL_NAME=marketplace
+```
+
+16. Creamos el canal
+
+```
+peer channel create -o orderer.acme.com:7050 -c $CHANNEL_NAME -f ./channel-artifacts/channel.tx --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/acme.com/orderers/orderer.acme.com/msp/tlscacerts/tlsca.acme.com-cert.pem
+```
+
+17. Hacer que la organización sea parte del canal
+
+```
+peer channel join -b marketplace.block
+```
