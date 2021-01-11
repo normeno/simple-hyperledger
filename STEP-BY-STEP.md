@@ -114,12 +114,19 @@ export CHAINCODE_NAME=foodcontrol
 export CC_RUNTIME_LANGUAGE=golang
 export CC_SRC_PATH="../../../chaincode/$CHAINCODE_NAME/"
 export ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/acme.com/orderers/orderer.acme.com/msp/tlscacerts/tlsca.acme.com-cert.pem
+export CHAINCODE_VERSION=1
 ```
 
 24. Hacer uso del ciclo de vida de chaincode, para empaquetar el proyecto
 
 ```
 peer lifecycle chaincode package ${CHAINCODE_NAME}.tar.gz --path ${CC_SRC_PATH} --lang ${CC_RUNTIME_LANGUAGE} --label ${CHAINCODE_NAME}_${CHAINCODE_VERSION} >& log.txt
+```
+
+Esto debería generar algo como lo siguiente:
+
+```
+peer lifecycle chaincode package foodcontrol.tar.gz --path ../../../chaincode/$CHAINCODE_NAME/ --lang golang --label foodcontrol_1 >& log.txt
 ```
 
 25. Revisamos que se cree correctamente, esto lo hacemos, `ls -l` para revisar que exista el archivo _foodcontrol.tar.gz_
