@@ -91,3 +91,43 @@ peer channel create -o orderer.acme.com:7050 -c $CHANNEL_NAME -f ./channel-artif
 ```
 peer channel join -b marketplace.block
 ```
+
+18. Crear la carpeta chaincode/foodcontrol
+
+19. Crear el archivo chaincode/foodcontrol/foodcontrol.go
+
+20. Crear el archivo chaincode/foodcontrol/go.mod
+
+21. Ingresamos al contanedor cli
+
+```
+docker exec -it cli bash
+```
+
+22. Dentro del contenedor verificamos que exista la ruta `/opt/gopath/src/github.com/chaincode/`, si no existe, es probable que sólo reiniciando el contenedor, tome la ruta
+
+23. Dentro del contenedor, nos aseguramos de tener las siguientes variables
+
+```
+export CHANNEL_NAME=marketplace
+export CHAINCODE_NAME=foodcontrol
+export CC_RUNTIME_LANGUAGE=golang
+export CC_SRC_PATH="../../../chaincode/$CHAINCODE_NAME/"
+export ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/acme.com/orderers/orderer.acme.com/msp/tlscacerts/tlsca.acme.com-cert.pem
+```
+
+24. Hacer uso del ciclo de vida de chaincode, para empaquetar el proyecto
+
+```
+peer lifecycle chaincode package ${CHAINCODE_NAME}.tar.gz --path ${CC_SRC_PATH} --lang ${CC_RUNTIME_LANGUAGE} --label ${CHAINCODE_NAME}_${CHAINCODE_VERSION} >& log.txt
+```
+
+25. Revisamos que se cree correctamente, esto lo hacemos, `ls -l` para revisar que exista el archivo _foodcontrol.tar.gz_
+
+- Aquí se nos puede generar el archivo go.sum (si es que no lo teníamos con anterioridad)
+
+26. En la misma máquina del CLI, vamos a instalar el chaincode en las organizaciones
+
+```
+peer lifecycle chaincode install foodcontrol.tar.gz
+```
