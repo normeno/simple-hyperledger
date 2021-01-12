@@ -138,3 +138,43 @@ peer lifecycle chaincode package foodcontrol.tar.gz --path ../../../chaincode/$C
 ```
 peer lifecycle chaincode install foodcontrol.tar.gz
 ```
+
+27. Buscamos el identificador, que es el último mensaje, donde dice "Chaincode code package identifier", un ejemplo de identificador es:
+
+```
+foodcontrol_1:d3511338dbe0363894823b9c0f5f098245af222a407e7dafdf78a8c53c1d2146
+```
+
+_* Esto es por que al instalarlo en otras organizaciones, nos debe dar el mismo identificador que el obtenido, y así nos aseguramente que todas las organizaciones instalen el paquete, y tengan el mismo paquete instalado_
+
+28. Para instalarlo en otras organizaciones, debemos hacer lo siguiente:
+
+```
+CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.acme.com/users/Admin@org2.acme.com/msp/ CORE_PEER_ADDRESS=peer0.org2.acme.com:7051 CORE_PEER_LOCALMSPID="Org2MSP" CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.acme.com/peers/peer0.org2.acme.com/tls/ca.crt peer lifecycle chaincode install foodcontrol.tar.gz
+```
+
+```
+CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/users/Admin@org3.acme.com/msp/ CORE_PEER_ADDRESS=peer0.org3.acme.com:7051 CORE_PEER_LOCALMSPID="Org3MSP" CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/peers/peer0.org3.acme.com/tls/ca.crt peer lifecycle chaincode install foodcontrol.tar.gz
+```
+
+_* Si revisamos el hash obtenido, comprobaremos que es el mismo que nos dio con la primera organización_
+
+29. Indicamos que sólo la org 1 y 3 puedan aprobar
+
+```
+peer lifecycle chaincode approveformyorg --tls --cafile $ORDERER_CA --channelID $CHANNEL_NAME --name $CHAINCODE_NAME --version $CHAINCODE_VERSION --sequence 1 --waitForEvent --signature-policy "OR ('Org1MSP.peer', 'Org3MSP.peer')" --package-id foodcontrol_1:d3511338dbe0363894823b9c0f5f098245af222a407e7dafdf78a8c53c1d2146
+```
+
+Si vemos que dice _committed with status (VALID) at_, significa que el proceso fue correcto
+
+30. Para verificar las políticas
+
+```
+peer lifecycle chaincode checkcommitreadiness --channelID $CHANNEL_NAME --name $CHAINCODE_NAME --version $CHAINCODE_VERSION --sequence 1 --signature-policy "OR ('Org1MSP.peer', 'Org3MSP.peer')" --output json
+```
+
+31. Hacemos lo mismo para la organización 3, pero con variables específicas
+
+```
+CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/users/Admin@org3.acme.com/msp/ CORE_PEER_ADDRESS=peer0.org3.acme.com:7051 CORE_PEER_LOCALMSPID="Org3MSP" CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/peers/peer0.org3.acme.com/tls/ca.crt peer lifecycle chaincode approveformyorg --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/acme.com/orderers/orderer.acme.com/msp/tlscacerts/tlsca.acme.com-cert.pem --channelID $CHANNEL_NAME --name $CHAINCODE_NAME --version $CHAINCODE_VERSION --sequence 1 --waitForEvent --signature-policy "OR ('Org1MSP.peer', 'Org3MSP.peer')" --package-id foodcontrol_1:d3511338dbe0363894823b9c0f5f098245af222a407e7dafdf78a8c53c1d2146
+```
