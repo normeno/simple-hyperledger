@@ -139,7 +139,8 @@ export CHAINCODE_NAME=foodcontrol
 export CC_RUNTIME_LANGUAGE=golang
 export CC_SRC_PATH="../../../chaincode/$CHAINCODE_NAME/"
 export ORDERER_CA=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/acme.com/orderers/orderer.acme.com/msp/tlscacerts/tlsca.acme.com-cert.pem
-export CHAINCODE_VERSION=1
+export CHAINCODE_VERSION=3
+export CHAINCODE_SEQUENCE=4
 ```
 
 26. Hacer uso del ciclo de vida de chaincode, para empaquetar el proyecto
@@ -151,7 +152,7 @@ peer lifecycle chaincode package ${CHAINCODE_NAME}.tar.gz --path ${CC_SRC_PATH} 
 Esto debería generar algo como lo siguiente:
 
 ```
-peer lifecycle chaincode package foodcontrol.tar.gz --path ../../../chaincode/$CHAINCODE_NAME/ --lang golang --label foodcontrol_1 >& log.txt
+peer lifecycle chaincode package foodcontrol.tar.gz --path ../../../chaincode/$CHAINCODE_NAME/ --lang ${CC_RUNTIME_LANGUAGE} --label ${CHAINCODE_NAME}_${CHAINCODE_VERSION} >& log.txt
 ```
 
 27. Revisamos que se cree correctamente, esto lo hacemos, `ls -l` para revisar que exista el archivo _foodcontrol.tar.gz_
@@ -168,6 +169,7 @@ peer lifecycle chaincode install foodcontrol.tar.gz
 
 _foodcontrol_1:d3511338dbe0363894823b9c0f5f098245af222a407e7dafdf78a8c53c1d2146_
 _foodcontrol_2:a032e43a6be1450f0281f10ed42f4b8c2e6afdf4033e6ea1d0f8721d7f746204_
+_foodcontrol_3:65b3cc9144708b16913e623542a98c2e26e8998e2e637c65e53d2ea59b93f746_
 
 _* Esto es por que al instalarlo en otras organizaciones, nos debe dar el mismo identificador que el obtenido, y así nos aseguramente que todas las organizaciones instalen el paquete, y tengan el mismo paquete instalado_
 
@@ -178,43 +180,72 @@ CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypt
 ```
 
 _foodcontrol_2:a032e43a6be1450f0281f10ed42f4b8c2e6afdf4033e6ea1d0f8721d7f746204_
+_foodcontrol_3:65b3cc9144708b16913e623542a98c2e26e8998e2e637c65e53d2ea59b93f746_
 
 ```
 CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/users/Admin@org3.acme.com/msp/ CORE_PEER_ADDRESS=peer0.org3.acme.com:7051 CORE_PEER_LOCALMSPID="Org3MSP" CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/peers/peer0.org3.acme.com/tls/ca.crt peer lifecycle chaincode install ${CHAINCODE_NAME}.tar.gz
 ```
 
 _foodcontrol_2:a032e43a6be1450f0281f10ed42f4b8c2e6afdf4033e6ea1d0f8721d7f746204_
+_foodcontrol_3:65b3cc9144708b16913e623542a98c2e26e8998e2e637c65e53d2ea59b93f746_
 
 _* Si revisamos el hash obtenido, comprobaremos que es el mismo que nos dio con la primera organización_
 
-31. Indicamos que sólo la org 1 y 3 puedan aprobar
+31. Indicamos que sólo la org 1 y 3 puedan aprobar (uso la secuencia 2, pero podría ser que usemos la 1 si estamos corriéndolo por primera vez)
 
 ```
-peer lifecycle chaincode approveformyorg --tls --cafile $ORDERER_CA --channelID $CHANNEL_NAME --name $CHAINCODE_NAME --version $CHAINCODE_VERSION --sequence 1 --waitForEvent --signature-policy "OR ('Org1MSP.peer', 'Org3MSP.peer')" --package-id foodcontrol_2:a032e43a6be1450f0281f10ed42f4b8c2e6afdf4033e6ea1d0f8721d7f746204
+peer lifecycle chaincode approveformyorg --tls --cafile $ORDERER_CA --channelID $CHANNEL_NAME --name $CHAINCODE_NAME --version $CHAINCODE_VERSION --sequence 2 --waitForEvent --signature-policy "OR ('Org1MSP.peer', 'Org3MSP.peer')" --package-id foodcontrol_3:65b3cc9144708b16913e623542a98c2e26e8998e2e637c65e53d2ea59b93f746
 ```
 
 Si vemos que dice _committed with status (VALID) at_, significa que el proceso fue correcto
 
-32. Para verificar las políticas
-
-```
-peer lifecycle chaincode checkcommitreadiness --channelID $CHANNEL_NAME --name $CHAINCODE_NAME --version $CHAINCODE_VERSION --sequence 1 --signature-policy "OR ('Org1MSP.peer', 'Org3MSP.peer')" --output json
-```
-
 33. Hacemos lo mismo para la organización 3, pero con variables específicas
 
 ```
-CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/users/Admin@org3.acme.com/msp/ CORE_PEER_ADDRESS=peer0.org3.acme.com:7051 CORE_PEER_LOCALMSPID="Org3MSP" CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/peers/peer0.org3.acme.com/tls/ca.crt peer lifecycle chaincode approveformyorg --tls --cafile $ORDERER_CA --channelID $CHANNEL_NAME --name $CHAINCODE_NAME --version $CHAINCODE_VERSION --sequence 1 --waitForEvent --signature-policy "OR ('Org1MSP.peer', 'Org3MSP.peer')" --package-id foodcontrol_2:a032e43a6be1450f0281f10ed42f4b8c2e6afdf4033e6ea1d0f8721d7f746204
+CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/users/Admin@org3.acme.com/msp/ CORE_PEER_ADDRESS=peer0.org3.acme.com:7051 CORE_PEER_LOCALMSPID="Org3MSP" CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/peers/peer0.org3.acme.com/tls/ca.crt peer lifecycle chaincode approveformyorg --tls --cafile $ORDERER_CA --channelID $CHANNEL_NAME --name $CHAINCODE_NAME --version $CHAINCODE_VERSION --sequence 2 --waitForEvent --signature-policy "OR ('Org1MSP.peer', 'Org3MSP.peer')" --package-id foodcontrol_3:65b3cc9144708b16913e623542a98c2e26e8998e2e637c65e53d2ea59b93f746
+```
+
+33. Para verificar las políticas
+
+```
+peer lifecycle chaincode checkcommitreadiness --channelID $CHANNEL_NAME --name $CHAINCODE_NAME --version $CHAINCODE_VERSION --sequence 2 --signature-policy "OR ('Org1MSP.peer', 'Org3MSP.peer')" --output json
 ```
 
 34. Hacer commit para el peer de la primera y tercera organización
 
 ```
-peer lifecycle chaincode commit -o orderer.acme.com:7050 --tls --cafile $ORDERER_CA --peerAddresses peer0.org1.acme.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.acme.com/peers/peer0.org1.acme.com/tls/ca.crt --peerAddresses peer0.org3.acme.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/peers/peer0.org3.acme.com/tls/ca.crt --channelID $CHANNEL_NAME --name $CHAINCODE_NAME --version $CHAINCODE_VERSION --sequence 1 --signature-policy "or ('Org1MSP.peer', 'Org3MSP.peer')"
+peer lifecycle chaincode commit -o orderer.acme.com:7050 --tls --cafile $ORDERER_CA --peerAddresses peer0.org1.acme.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.acme.com/peers/peer0.org1.acme.com/tls/ca.crt --peerAddresses peer0.org3.acme.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/peers/peer0.org3.acme.com/tls/ca.crt --channelID $CHANNEL_NAME --name $CHAINCODE_NAME --version $CHAINCODE_VERSION --sequence 2 --signature-policy "or ('Org1MSP.peer', 'Org3MSP.peer')"
 ```
 
 35. Vamos a probar llamando al método set
 
 ```
-peer chaincode invoke -o orderer.acme.com:7050 --tls --cafile $ORDERER_CA -C $CHANNEL_NAME -n $CHAINCODE_NAME -c '{"Args":["Set","dig:3","ricardo","banana"]}'
+peer chaincode invoke -o orderer.acme.com:7050 --tls --cafile $ORDERER_CA --channelID $CHANNEL_NAME -n $CHAINCODE_NAME -c '{"Args":["Set","dig:3","ricardo","banana"]}'
 ```
+
+36. Vamos a probar el mismo id, pero con un nombre distinto, debería también darnos éxito
+
+```
+peer chaincode invoke -o orderer.acme.com:7050 --tls --cafile $ORDERER_CA --channelID $CHANNEL_NAME -n $CHAINCODE_NAME -c '{"Args":["Set","dig:3","pedro","banana"]}'
+```
+
+37. Podemos revisar los cambios en la siguiente url: http://localhost:5985/_utils/
+
+38. Vamos a obtener los datos guardados, esto lo hacemos con el método query de nuestro chaincode
+
+```
+peer chaincode query --channelID $CHANNEL_NAME -n $CHAINCODE_NAME -c '{"Args":["Query","dig:3"]}'
+```
+
+39. Ahora probaremos con la organización 2. Esto nos arrojará un error, y esto es debido a que no le dimos permisos, por lo cual, es correcto que no nos deje.
+
+```
+CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.acme.com/users/Admin@org2.acme.com/msp/ CORE_PEER_ADDRESS=peer0.org2.acme.com:7051 CORE_PEER_LOCALMSPID="Org2MSP" CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.acme.com/peers/peer0.org2.acme.com/tls/ca.crt peer chaincode invoke -o orderer.acme.com:7050 --tls --cafile $ORDERER_CA --channelID $CHANNEL_NAME -n $CHAINCODE_NAME -c '{"Args":["Set","dig:4","carlos","banana"]}'
+```
+
+40. Ahora en lugar de probar con la organización 2, lo haremos con la organización 3, y en esta ocasión será exitoso, dado que esta organización si tiene los permisos correspondientes
+
+```
+CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/users/Admin@org3.acme.com/msp/ CORE_PEER_ADDRESS=peer0.org3.acme.com:7051 CORE_PEER_LOCALMSPID="Org3MSP" CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.acme.com/peers/peer0.org3.acme.com/tls/ca.crt peer chaincode invoke -o orderer.acme.com:7050 --tls --cafile $ORDERER_CA --channelID $CHANNEL_NAME -n $CHAINCODE_NAME -c '{"Args":["Set","dig:4","carlos","banana"]}'
+```
+
